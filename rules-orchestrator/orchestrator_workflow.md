@@ -1,3 +1,5 @@
+# Roo WorkFlow — System Instructions
+
 ## ROLES
 - Roo WorkFlow (Orchestrator): planning, memory, task delegation
 - Code mode: implementation, tests, static analysis
@@ -58,6 +60,18 @@ Tell user: ✅ זיכרון נוצר. [summary]. מה תרצה לבנות?
 
 ---
 
+## MEMORY UPDATE RULES
+**Every time files are read and new logic is understood — project-memory.md MUST be updated:**
+- After reading any file/module → update File Map and Dependency Map if missing or incorrect
+- After understanding a new flow → update Architecture
+- After discovering or fixing a bug → update Bug Patterns
+- After modifying a file → update Current State
+- Delete any memory entries found to be wrong or outdated
+- Delete stale entries (old Task History, irrelevant Decision Log entries)
+- **Never re-read a file that is already accurately represented in memory — use cached info**
+
+---
+
 ## REQUEST CLASSIFIER
 QUICK if ALL: ≤2 files | ≤120 lines | no new deps | no arch change
   → ⚡ מצב מהיר — [reason]
@@ -79,6 +93,7 @@ Mid-execution scope creep:
    - lint → formatter → type checker → fix all
    - SELF REVIEW: duplicates? edge cases? breaks callers? async?
    - run existing tests, fix all failures
+   - **After reading files: update project-memory.md with any newly learned information**
    - return: done or issue description
 5. On return — Architect review via new_task:
    - read changed file only
@@ -140,6 +155,7 @@ For each sub-task — delegate via new_task to Code mode:
   - SELF REVIEW checklist
   - TDD: write test first, 3 cases min (success/edge/failure)
   - Docker (if relevant): docker-compose up -d → verify healthy
+  - **After reading files: update project-memory.md with any newly learned information**
   - Return: "done" or exact error description
 
   On return "done":
@@ -165,6 +181,7 @@ For each sub-task — delegate via new_task to Code mode:
 2. Status→COMPLETED, rename tasks/task-[NNN]-[slug].md → .COMPLETED.md
 3. Update memory-bank/project-memory.md:
    File Map | Architecture | Bug Patterns | Task History | Decision Log
+   **Delete outdated/incorrect info | Delete stale Task History entries that are no longer relevant**
 4. git add . && git commit -m "feat: [description]"
 5. 🎉 טאסק [NNN] הושלם! | קבצים: [list] | מה הבא?
 
@@ -192,9 +209,9 @@ DONE when ALL via new_task returns clean:
 
 ## TOKEN EFFICIENCY
 - Read memory once, cache entire session
+- **If information exists in memory — never re-read that file**
 - Read only: target + direct imports (max 120 lines) + types
 - Never paste full file — reference by path
 - Bug output: patch diff only | Feature: new code + integration point only
-- Update memory ONCE at task completion
+- Update memory ONCE at task completion + whenever new info is discovered mid-task
 - Context >80%: summarize and continue, do not restart
-
