@@ -4,7 +4,7 @@
 - Roo WorkFlow (Orchestrator): planning, memory, task delegation
 - Code mode: implementation, tests, static analysis
 - Architect mode: design review, spec validation
-- Debug mode: deep root-cause analysis (attempt 3 only)
+- Debug mode: deep root-cause analysis (activated at counter=3, up to 3 debug attempts)
 
 ## SUB-TASK SIZE
 One logical unit (function/endpoint/class)
@@ -98,7 +98,9 @@ Mid-execution scope creep:
 5. On return — Architect review via new_task:
    - read changed file only
    - verify: spec contract | no duplicates | no secrets | no junk
-   - Issues → back to Code (max 2 retries) | Clean → proceed
+   - If issue → back to Code (max 2 retries)
+     **Each retry MUST include: "previous approach was: [X] — do NOT repeat it, try a different approach"**
+   - Clean → proceed
 6. Update memory IF architecture changed
 7. git commit -m "fix: [description]"
 8. ✅ בוצע: [what changed]
@@ -143,7 +145,10 @@ Last sub-task: full integration test
 Update task file: Status→IN-PROGRESS, Started→timestamp.
 Mark first sub-task [>]. Save immediately.
 
-RETRY RULES: start=0 | +1 on fail | reset on success | max=3
+RETRY RULES:
+  code_counter: start=0 | +1 on fail | reset on success | max=2
+  debug_counter: start=0 | +1 on fail | reset on success | max=3
+  Flow: code_counter=1,2 → Code retry | code_counter=3 → switch to Debug mode
 
 For each sub-task — delegate via new_task to Code mode:
   Instructions must include:
@@ -166,14 +171,31 @@ For each sub-task — delegate via new_task to Code mode:
     - Performance: no O(n²) | SOLID respected
     - Return: "clean" or specific issue
 
-    If "clean": mark [>]→[x], next→[>], counter→0, save task file
+    If "clean": mark [>]→[x], next→[>], code_counter→0, save task file
     Report: ✅ [X/Y]: [done] | ⏳ הבא: [next]
 
-    If issue: send back to Code (increment counter)
-    If counter=3: delegate to Debug mode via new_task
-    If Debug fails: stop and tell user in Hebrew:
-      ❌ נתקעתי: טאסק [NNN] תת-טאסק [X/Y] | 3/3 ניסיונות
+    If issue: send back to Code (increment code_counter)
+      **Each retry MUST include: "previous approach was: [X] — do NOT repeat it, try a different approach"**
+
+  If code_counter=3: switch to Debug mode
+    Delegate via new_task to Debug mode:
+    - Deep root-cause analysis only — do NOT make broad changes
+    - File path + full error description
+    - **All previous failed approaches (Code + Debug): "these were tried and failed: [list] — do NOT repeat any of them"**
+    - Bug Patterns to watch for
+    - Steps: reproduce → isolate → patch → verify
+    - **After identifying root cause: update Bug Patterns in project-memory.md
+      with: [error] → [actual cause] → [fix applied]**
+    - **If new file/dependency discovered during investigation → update File Map**
+    - Return: "fixed" + cause description, or "failed" + exact blocker + new findings
+
+    If "fixed": mark [>]→[x], next→[>], code_counter→0, debug_counter→0, save task file
+    If "failed": increment debug_counter, retry Debug mode
+      **Next debug attempt MUST include all previously failed approaches — do NOT repeat any**
+    If debug_counter=3: stop and tell user in Hebrew:
+      ❌ נתקעתי: טאסק [NNN] תת-טאסק [X/Y] | 3/3 ניסיונות דיבאג
       קובץ: [path] | בעיה: [cause]
+      גישות שנוסו: [list of all failed approaches]
       1. תקן ידנית  2. גישה אחרת  3. דלג — Wait.
 
 ### PHASE 5 — COMPLETION
