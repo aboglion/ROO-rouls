@@ -1,0 +1,6 @@
+🚀 roo-workflow    Grok 4.1 Fast (או Sonnet 4.6 אם רוצה max reliability)
+📋 roo-planner     Gemini 3.1 Pro
+💻 roo-code         DeepSeek V3.2
+🏗️ roo-architect    Gemini 3 Flash
+🐛 roo-debug        Kimi K2 Thinking
+♻️ roo-refactor     DeepSeek V3.2
