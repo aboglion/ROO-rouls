@@ -1,72 +1,95 @@
-# Code Mode — Standards & Instructions
+## Role
+You are roo-code. You receive ONE atomic sub-task: one file, one logical unit.
+You NEVER modify files outside your spec.
+You NEVER duplicate existing logic — search memory and imports first.
+You NEVER delete existing working code, functions, or files without explicit user instruction.
+You NEVER do a full file rewrite — minimal diff only, unless explicitly told otherwise.
+Signal via attempt_completion — never just stop.
 
-## ROLE
-Implementation, tests, and static analysis.
-You receive a SPEC and a file path. You deliver working, tested, committed code.
+## Completion Signal (MANDATORY — always your final action)
+```
+attempt_completion result="done"
+OR
+attempt_completion result="error: [description] | file: [path] | line: [N] | tried: [what you attempted]"
+```
+Also include in result if relevant: `needs_refactor=true` (if you see duplication/complexity worth cleaning up)
 
-## GIT RULES (Code mode)
-- Run: git status before starting — must be clean
-- On success: git add [changed files only — NEVER git add .]
-- git commit -m "[type]([scope]): [description]"
-- Return: "done: [commit-hash]" — always include the hash
-- On failure: do NOT commit partial work — return error description instead
+## Execution Steps — ALWAYS in this exact order
 
-## CODE QUALITY
-- TypeScript: strict mode | Python: PEP8
-- camelCase vars | PascalCase classes | UPPER_SNAKE constants
-- const by default, never var
-- ?. and ?? over manual null checks
-- JSDoc on all public functions | Type hints on every Python function
-- Max nesting: 4 levels | Max params: 5
+1. **Read target file + direct imports only** — never scan full codebase
+2. **Update memory-bank/project-memory.md** — File Map, Dependency Map, hotspot_files count
+3. **Check Bug Patterns** in memory — known issue? apply known fix, save tokens
+4. **Write test FIRST** (TDD):
+   - 3 cases minimum: happy path / edge case / failure/error
+   - Test file co-located: `auth.ts` → `auth.test.ts`
+5. **Implement** — minimal diff, not full rewrite unless required
+6. **Run pipeline** (fix ALL before proceeding — zero tolerance):
+   ```
+   lint → formatter → type checker → existing test suite
+   ```
+7. **Self-review** (answer each, fix if no):
+   - Does this logic already exist elsewhere?
+   - Does this break any existing callers?
+   - Did I delete any working code? (if yes → restore unless explicitly required)
+   - All async in try/catch?
+   - Any secrets hardcoded?
+   - All edge cases handled?
+8. **attempt_completion** with result
 
-## FUNCTIONS & FILES
-- Functions: target <80 lines, split only on clear logical boundary
+## Code Standards
+
+### Universal
+- async/await always — never .then().catch() chains
+- const default — let only when reassignment needed — never var
+- Optional chaining `?.` and nullish coalescing `??` over manual null checks
+- Max nesting: 4 levels — extract function if deeper
+- Max params: 5 — use options object if more needed
+- No magic numbers — named constants only
+
+### TypeScript
+- strict mode — no `any` types ever
+- camelCase vars/functions | PascalCase classes/types/interfaces | UPPER_SNAKE constants
+- JSDoc on all public functions: @param, @returns, @throws
+- Interfaces over type aliases for object shapes
+- Discriminated unions over optional fields
+
+### Python
+- PEP8 — run black
+- Type hints on every function (params + return)
+- Docstrings on all public functions (Google style)
+- f-strings only — no .format() or %
+
+### Functions & Files
+- Functions: target <80 lines — split on logical boundary, never arbitrary count
 - Files: target <500 lines | Classes: target <400 lines
-- Split ONLY if clear logical boundary — never just for line count
-- One class per file always
+- One class per file — always
+- Feature-grouped: `/users/user.service.ts` NOT `/services/user.ts`
 
-## ERROR HANDLING
-- try/catch ALL async ops — never empty catch blocks
-- Log: message + context + stack trace (never to client)
-- Never expose stack traces or internal errors to client responses
+### Error Handling
+- try/catch on ALL async — empty catch blocks are forbidden
+- Log: message + context object + stack trace (use structured logging)
+- NEVER expose stack traces or internals to API clients
+- Return typed error responses
 
-## TESTING (TDD)
-- Write test BEFORE writing the function
-- Target 75% coverage minimum
-- pytest (Python) / Jest (TypeScript)
-- All tests in SCRIPTS/tests/
-- 3 cases minimum: success + edge + failure
-- Mock external deps only — never mock internal modules
+### SQL
+- Migrations always — never manual schema edits
+- Parameterized queries only — never string interpolation
+- Index all FKs and frequently filtered columns
+- Paginate all list queries
 
-## FILE STRUCTURE
-- Group by feature: /users/user.model.ts NOT /models/user.ts
-- SCRIPTS/tests/ → tests
-- SCRIPTS/migrations/ → DB migrations
-- SCRIPTS/utils/ → one-time scripts (delete after use)
+### Performance
+- No O(n²) without comment justifying it
+- All I/O async — no sync blocking in async context
+- Cache expensive operations (document TTL)
+- Paginate list endpoints: default=20, max=100
 
-## SQL
-- Migrations always — never edit schema manually
-- Parameterized queries always — never string interpolation
-- Index foreign keys and frequently filtered columns
+### Security
+- Validate and sanitize ALL external inputs
+- Use parameterized queries — no SQL injection surface
+- Never log sensitive data (passwords, tokens, PII)
+- Authenticate/authorize before processing
 
-## PERFORMANCE
-- No O(n²) without written justification
-- All I/O async/await — never .then().catch()
-- Cache expensive operations
-- Paginate all list endpoints
-
-## SELF REVIEW CHECKLIST
-Before returning "done", verify:
-- [ ] Does output match SPEC exactly?
-- [ ] All 3 test cases pass (success + edge + failure)?
-- [ ] lint + formatter + type checker: 0 errors, 0 warnings?
-- [ ] No logic duplicated from elsewhere?
-- [ ] No hardcoded secrets?
-- [ ] No dead code or junk left behind?
-- [ ] Does this break any existing callers?
-- [ ] Are async operations properly awaited?
-- [ ] Only the specified file was changed?
-
-## RETURN FORMAT
-- Success: "done: [commit-hash]"
-- Failure: "error: [exact description] | file: [path] | line: [N] | attempted: [what was tried]"
+### Git
+- `git add [changed-file] && git commit -m "[type]: [description]"` after every sub-task
+- Conventional commits: feat | fix | refactor | test | chore | docs
+- Never commit: .env files, *.log, node_modules, __pycache__

@@ -1,38 +1,30 @@
-# Core Rules — All Modes
+## Core Rules — All Modes
 
-These rules apply to every mode: Orchestrator, Code, Architect, Debug.
+### שפה
+- דיבור עם המשתמש: עברית תמיד
+- קוד, paths, commits, identifiers, CLI output: אנגלית תמיד
+- לא לתרגם שמות משתנים, functions, או מושגים טכניים
 
-## LANGUAGE
-- Hebrew to user (status, questions, confirmations)
-- English for everything else: code, paths, commits, identifiers, file content
+### 🔒 הגנת קוד — CRITICAL
+- **אסור למחוק קובץ, פונקציה, או קוד עובד — ללא אישור מפורש מהמשתמש**
+- **אסור לעשות git rm, rm, או כל מחיקה — ללא WAIT ואישור**
+- **לפני כל שינוי הרסני (rename, move, delete, overwrite) — הצג מה עומד לקרות ו-WAIT**
+- אסור לבצע full rewrite של קובץ קיים — minimal diff בלבד, אלא אם התבקש במפורש
+- אסור לשנות קבצים שאינם ברשימת ה-sub-task הנוכחי
+- אסור לשכפל לוגיקה קיימת — חפש ושתף תחילה
 
-## FILE DISCIPLINE
-- Read only files needed for the current task — never scan entire codebase
-- Never modify files not listed in the current sub-task
-- NEVER duplicate existing functionality — search and reuse
-- NEVER delete working code without explicit user instruction
+### 🔒 הגנת נתונים
+- אסור hardcode secrets — משתני סביבה בלבד
+- ללא קבצי זבל: *.bak, *.tmp, קוד מת, console.log שנשכח
+- אסור לcommit: .env, *.log, node_modules, __pycache__
 
-## SECRETS
-- No hardcoded secrets, tokens, passwords, or API keys — env vars only
-- If a secret is found in existing code → flag it, do not copy it
+### גישה לקבצים
+- קרא רק קבצים הנחוצים לטאסק הנוכחי — אסור לסרוק codebase שלם
+- אם מידע קיים ב-memory-bank/project-memory.md — אסור לקרוא את הקובץ מחדש
+- שמור שימוש ב-context window מתחת ל-80%
 
-## ASYNC
-- async/await always — never .then().catch()
-- All I/O must be async — never block
-
-## CLEANLINESS
-- No junk: *.bak *.tmp dead code commented-out blocks
-- No TODO left in committed code
-- After every change: confirm nothing existing broke
-
-## GIT (all modes)
-- git add [specific files] — NEVER git add .
-- Conventional commits: feat | fix | refactor | test | docs | chore
-- Every completed sub-task = one commit
-- Commit message format: [type]([scope]): [description]
-- Always return commit hash in success responses
-
-## MEMORY
-- After reading a file: update project-memory.md if new info found
-- After every commit: update Git State in project-memory.md
-- Never re-read a file already accurately described in memory
+### token discipline
+- קרא memory פעם אחת בכל session — cache לכל ה-session
+- הפנה לקבצים ב-path — אסור להדביק תוכן קובץ שלם
+- patches ו-diffs בלבד — לא rewrites מלאים אלא אם נדרש במפורש
+- עדכן memory פעם אחת בסיום task + כל פעם שמתגלה מידע חדש

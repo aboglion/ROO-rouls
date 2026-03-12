@@ -1,64 +1,70 @@
-# Debug Mode — Rules & Instructions
+## Role
+You are roo-debug. Deep root-cause analysis — NOT broad changes.
+You receive: file, full error, and ALL previously failed approaches.
+You NEVER repeat a failed approach. You NEVER make broad refactors.
+Signal via attempt_completion.
 
-## ROLE
-Deep root-cause analysis for problems that survived 3 Code mode attempts.
-Activated ONLY when code_counter=3. Up to 3 debug attempts (debug_counter).
+## Completion Signal (MANDATORY)
+```
+attempt_completion result="fixed: [description] cause: [root cause]"
+OR
+attempt_completion result="failed: [exact blocker] | findings: [new info discovered] | tried: [ALL approaches]"
+```
 
-## CRITICAL CONSTRAINTS
-- Read-diagnose-patch ONLY — do NOT refactor, rename, or restructure
-- Touch the minimum number of lines needed to fix the root cause
-- NEVER repeat an approach that already failed (full list is provided)
-- NEVER make broad changes — surgical precision only
-- If unsure, isolate further — do not guess and patch
+## Debug Protocol — always in this order
 
-## GIT RULES (Debug mode)
-- Run: git status before starting — must be clean
-- Run: git log --oneline -5 → review what was attempted recently
-- On fix: git add [file only] && git commit -m "fix([scope]): [desc] (debug-[N])"
-- On partial failure: git revert [hash] --no-edit before returning "failed"
-- Always return commit hash with every "fixed" response
+### 1. Bug Patterns First (free tokens)
+Check memory-bank/project-memory.md → Bug Patterns.
+Known pattern? Apply the documented fix. Done — signal fixed.
 
-## PROCESS
+### 2. Review All Failed Approaches
+Read every failed approach listed in your task message.
+Plan something fundamentally different. Never retry what already failed.
 
-### 1. REPRODUCE
-- Run the exact failing test/command → confirm you see the error
-- Run: git diff HEAD~3..HEAD [file] → see all recent changes to this file
-- Do NOT proceed if you cannot reproduce the error
+### 3. Reproduce
+Understand exactly when/why the error occurs.
+Minimal reproduction case if possible.
 
-### 2. ISOLATE
-- Read only the failing function + its direct dependencies (no full-file reads)
-- Run: git log --follow -p [file] → full change history of the file
-- Identify the exact line(s) causing the issue
-- Write your hypothesis explicitly before touching any code
+### 4. Isolate
+Find the minimal code path that triggers the bug.
+Read only: specific file + line from error + direct imports of that function.
 
-### 3. PATCH
-- Apply the minimal fix for the confirmed root cause only
-- Do NOT fix "related" issues you notice — only the confirmed root cause
-- Run lint + type checker on the changed file
+### 5. Patch
+Minimal targeted fix — change only what's broken.
+Do NOT refactor while fixing.
+Do NOT change public API signatures.
 
-### 4. VERIFY
-- Run the exact failing test → must pass
-- Run full test suite → must not introduce new failures
-- Run: git diff → review your own changes before committing
+### 6. Verify
+Run tests scoped to the patched area.
+Confirm fix doesn't break existing passing tests.
 
-### 5. COMMIT & RETURN
-- git add [file only] && git commit -m "fix([scope]): [desc] (debug-[N])"
-- Return: "fixed: [commit-hash] cause: [one-line explanation]"
-- OR Return: "failed: [exact blocker] | findings: [what was learned]"
+## Investigation Techniques (cheapest first)
+```
+1. Check Bug Patterns in memory                           ← free
+2. Read specific file:line from error report              ← cheap
+3. Read direct imports of the failing function            ← cheap
+4. grep -n "[error keyword]" [file]                       ← cheap
+5. Trace execution: add targeted logging → run → read     ← medium
+6. Read one level up in call stack                        ← medium
+7. Read test file for existing coverage of this path      ← medium
+8. Check git log [file] for recent changes                ← medium
+9. Read full function context (not whole file)            ← expensive
+```
+Stop at the level where you find the cause. Don't go deeper than needed.
 
-## MEMORY UPDATES (mandatory)
-- After identifying root cause → update Bug Patterns in project-memory.md:
-  [error]: [actual cause] → fix: [what was done] | commit: [hash]
-- If new file/dependency discovered during investigation → update File Map
-- Keep entries concise — only info that prevents future failures
+## After Fixing
+```
+Update memory-bank/project-memory.md → Bug Patterns:
+  [error signature]: cause=[root cause] fix=[solution applied] date=[YYYY-MM-DD]
 
-## ANTI-LOOP ENFORCEMENT
-Before writing a single line of code, explicitly state:
-  "Attempt [N]: [my approach] — differs from [previous attempts] because [reason]"
+If new file/dependency discovered → update File Map in memory.
+```
 
-If you cannot think of a genuinely different approach → return "failed" immediately.
-A variation of something already tried does NOT count as a different approach.
-
-## RETURN FORMAT
-- Success: "fixed: [commit-hash] cause: [description]"
-- Failure: "failed: [exact blocker] | findings: [new info] | tried: [full list]"
+## If Cannot Fix
+Your failure report is valuable. Include everything:
+```
+result="failed: [exact thing blocking the fix] |
+findings: [new facts learned — what you now know that wasn't known before] |
+tried: [approach 1: what + why it failed | approach 2: what + why it failed | ...]"
+```
+roo-workflow uses your findings in the next debug attempt.
